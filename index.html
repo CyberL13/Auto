@@ -1,137 +1,52 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<title>Low-Poly City</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Low-Poly City</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    #game { position:fixed; inset:0; width:100%; height:100%; display:block }
+    #menu { z-index:20; text-align:center; gap:14px }
+    #help { max-width:440px; color:#cfd8e8; line-height:1.6 }
+    #hud { position:fixed; z-index:5; left:18px; top:16px; color:#fff; font: bold 16px Arial,sans-serif; text-shadow:0 2px 4px #000; pointer-events:none }
+    #status { position:fixed; z-index:5; bottom:18px; left:50%; transform:translateX(-50%); color:#fff; font: bold 15px Arial,sans-serif; text-shadow:0 2px 4px #000; pointer-events:none }
+    #loaderror { max-width:560px; padding:12px; text-align:center }
+  </style>
 </head>
 <body>
-<canvas id="game"></canvas>
-
-<!-- Loading screen -->
-<div id="loading" class="overlay">
-  <div class="logo">LOW-POLY <span>CITY</span></div>
-  <div id="loadmsg">Loading…</div>
-  <div class="bar"><i id="loadbar"></i></div>
-  <div id="loaderror" class="hidden"></div>
-</div>
-
-<!-- Main menu -->
-<div id="mainmenu" class="overlay hidden">
-  <div class="logo">LOW-POLY <span>CITY</span></div>
-  <div class="tagline">An open-world driving sandbox</div>
-  <div class="menubox">
-    <button id="btnContinue" class="btn big">Continue</button>
-    <button id="btnNew" class="btn big">New Game</button>
-    <button id="btnControls" class="btn">Controls</button>
-  </div>
-  <div id="controlsHelp" class="help hidden"></div>
-</div>
-
-<!-- In-game HUD -->
-<div id="hud" class="hidden">
-  <div id="topleft">
-    <div id="clock">12:00</div>
-    <div id="zone"></div>
-    <div id="energyWrap"><span>ENERGY</span><div class="meter"><i id="energyBar"></i></div></div>
-  </div>
-
-  <div id="topright">
-    <div id="stars"></div>
-    <div id="wantedMsg"></div>
-    <div id="money">$0</div>
-    <div id="bank">Bank $0</div>
-  </div>
-
-  <div id="missionpanel" class="hidden">
-    <div id="mTitle"></div>
-    <div id="mObjective"></div>
-    <div id="mTimer"></div>
-  </div>
-
-  <div id="minimapWrap"><canvas id="minimap" width="200" height="200"></canvas><div id="mmN">N</div></div>
-
-  <div id="vehicleHud" class="hidden">
-    <div id="vSpeed">0</div><div id="vUnit">km/h</div>
-    <div id="vName"></div>
-    <div class="vbars">
-      <span>FUEL</span><div class="meter"><i id="vFuel"></i></div>
-      <span>COND.</span><div class="meter"><i id="vCond"></i></div>
-    </div>
-  </div>
-
-  <div id="prompt"></div>
-  <div id="toasts"></div>
-  <div id="banner" class="hidden"></div>
-  <div id="fade"></div>
-</div>
-
-<!-- Shop / interaction panel -->
-<div id="shop" class="overlay hidden"></div>
-
-<!-- Full map -->
-<div id="mapscreen" class="overlay hidden">
-  <div class="maphead">CITY MAP <small>Click to set a waypoint · M or ESC to close</small></div>
-  <canvas id="bigmap" width="720" height="720"></canvas>
-</div>
-
-<!-- Pause menu -->
-<div id="pause" class="overlay hidden"></div>
-
-<script>
-(function () {
-  var THREE_SOURCES = [
-    'lib/three.min.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
-    'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js',
-    'https://unpkg.com/three@0.128.0/build/three.min.js'
-  ];
-  var GAME_FILES = [
-    'config.js', 'util.js', 'models.js', 'map.js', 'world.js',
-    'render.js', 'city.js', 'vehicles.js', 'ai.js', 'peds.js',
-    'player.js', 'interiors.js', 'shops.js', 'missions.js',
-    'audio.js', 'ui.js', 'main.js'
-  ];
-  var msg = document.getElementById('loadmsg');
-  var bar = document.getElementById('loadbar');
-  var err = document.getElementById('loaderror');
-
-  function fatal(text) {
-    err.classList.remove('hidden');
-    err.innerHTML = text;
-  }
-  function load(src, ok, fail) {
-    var s = document.createElement('script');
-    s.src = src;
-    s.onload = ok;
-    s.onerror = function () { s.remove(); fail(); };
-    document.head.appendChild(s);
-  }
-  function loadThree(i) {
-    if (i >= THREE_SOURCES.length) {
-      fatal('Could not load <b>Three.js</b>.<br>Download <code>three.min.js</code> (release r128) and place it at ' +
-            '<code>lib/three.min.js</code>, then reload this page.<br>See README.md for the link.');
-      return;
+  <canvas id="game"></canvas>
+  <div id="loading" class="overlay"><div class="logo">LOW-POLY <span>CITY</span></div><div id="loadmsg">Loading game…</div><div class="bar"><i id="loadbar"></i></div><div id="loaderror" class="hidden"></div></div>
+  <div id="menu" class="overlay hidden"><div class="logo">LOW-POLY <span>CITY</span></div><div class="tagline">A small city driving demo</div><button id="start" class="btn big">Start Driving</button><div id="help">WASD or arrow keys to drive · Space to brake · R to reset</div></div>
+  <div id="hud" class="hidden">LOW-POLY CITY</div><div id="status" class="hidden"></div>
+  <script>
+  (function () {
+    var three = [
+      'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
+      'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js',
+      'https://unpkg.com/three@0.128.0/build/three.min.js'
+    ];
+    var files = ['peds.js','player.js','interiors.js','shops.js','missions.js','audio.js','ui.js','main.js'];
+    var msg = document.getElementById('loadmsg'), bar = document.getElementById('loadbar'), err = document.getElementById('loaderror');
+    function fail(text) { err.textContent = text; err.classList.remove('hidden'); }
+    function loadThree(i) {
+      if (i === three.length) { fail('Three.js could not be downloaded. Check your internet connection and reload.'); return; }
+      var s = document.createElement('script'); s.src = three[i]; s.onload = function () { loadFile(0); };
+      s.onerror = function () { s.remove(); loadThree(i + 1); }; document.head.appendChild(s);
     }
-    msg.textContent = 'Loading Three.js (' + (i + 1) + '/' + THREE_SOURCES.length + ')…';
-    load(THREE_SOURCES[i], loadGame.bind(null, 0), function () { loadThree(i + 1); });
-  }
-  function loadGame(n) {
-    if (n >= GAME_FILES.length) { return; }  // main.js boots itself
-    msg.textContent = 'Loading game code…';
-    bar.style.width = Math.round(100 * n / GAME_FILES.length) + '%';
-    load(GAME_FILES[n], loadGame.bind(null, n + 1), function () {
-      fatal('Failed to load <code>' + GAME_FILES[n] + '</code>. Make sure all files of the game folder are present.');
+    function loadFile(i) {
+      if (i === files.length) { window.LowPolyGame.boot(); return; }
+      msg.textContent = 'Loading ' + files[i] + '…'; bar.style.width = Math.round(i / files.length * 100) + '%';
+      var s = document.createElement('script'); s.src = 'js/' + files[i];
+      s.onload = function () { loadFile(i + 1); };
+      s.onerror = function () { fail('Could not load js/' + files[i] + '. Verify the file exists and reload.'); };
+      document.head.appendChild(s);
+    }
+    window.addEventListener('error', function (e) {
+      if (e.message) fail('Game error: ' + e.message);
     });
-  }
-  window.addEventListener('error', function (e) {
-    if (document.getElementById('mainmenu').classList.contains('hidden')) {
-      fatal('Script error: ' + (e.message || e.error) + ' (' + (e.filename || '').split('/').pop() + ':' + e.lineno + ')');
-    }
-  });
-  loadThree(0);
-})();
-</script>
+    loadThree(0);
+  })();
+  </script>
 </body>
 </html>
