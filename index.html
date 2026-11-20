@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Low-Poly City</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<!-- Loading screen -->
+<div id="loading" class="overlay">
+  <div class="logo">LOW-POLY <span>CITY</span></div>
+  <div id="loadmsg">Loading…</div>
+  <div class="bar"><i id="loadbar"></i></div>
+  <div id="loaderror" class="hidden"></div>
+</div>
+
+<!-- Main menu -->
+<div id="mainmenu" class="overlay hidden">
+  <div class="logo">LOW-POLY <span>CITY</span></div>
+  <div class="tagline">An open-world driving sandbox</div>
+  <div class="menubox">
+    <button id="btnContinue" class="btn big">Continue</button>
+    <button id="btnNew" class="btn big">New Game</button>
+    <button id="btnControls" class="btn">Controls</button>
+  </div>
+  <div id="controlsHelp" class="help hidden"></div>
+</div>
+
+<!-- In-game HUD -->
+<div id="hud" class="hidden">
+  <div id="topleft">
+    <div id="clock">12:00</div>
+    <div id="zone"></div>
+    <div id="energyWrap"><span>ENERGY</span><div class="meter"><i id="energyBar"></i></div></div>
+  </div>
+
+  <div id="topright">
+    <div id="stars"></div>
+    <div id="wantedMsg"></div>
+    <div id="money">$0</div>
+    <div id="bank">Bank $0</div>
+  </div>
+
+  <div id="missionpanel" class="hidden">
+    <div id="mTitle"></div>
+    <div id="mObjective"></div>
+    <div id="mTimer"></div>
+  </div>
+
+  <div id="minimapWrap"><canvas id="minimap" width="200" height="200"></canvas><div id="mmN">N</div></div>
+
+  <div id="vehicleHud" class="hidden">
+    <div id="vSpeed">0</div><div id="vUnit">km/h</div>
+    <div id="vName"></div>
+    <div class="vbars">
+      <span>FUEL</span><div class="meter"><i id="vFuel"></i></div>
+      <span>COND.</span><div class="meter"><i id="vCond"></i></div>
+    </div>
+  </div>
+
+  <div id="prompt"></div>
+  <div id="toasts"></div>
+  <div id="banner" class="hidden"></div>
+  <div id="fade"></div>
+</div>
+
+<!-- Shop / interaction panel -->
+<div id="shop" class="overlay hidden"></div>
+
+<!-- Full map -->
+<div id="mapscreen" class="overlay hidden">
+  <div class="maphead">CITY MAP <small>Click to set a waypoint · M or ESC to close</small></div>
+  <canvas id="bigmap" width="720" height="720"></canvas>
+</div>
+
+<!-- Pause menu -->
+<div id="pause" class="overlay hidden"></div>
+
+<script>
+(function () {
+  var THREE_SOURCES = [
+    'lib/three.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
+    'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js',
+    'https://unpkg.com/three@0.128.0/build/three.min.js'
+  ];
+  var GAME_FILES = [
+    'js/config.js', 'js/util.js', 'js/models.js', 'js/map.js', 'js/world.js',
+    'js/render.js', 'js/city.js', 'js/vehicles.js', 'js/ai.js', 'js/peds.js',
+    'js/player.js', 'js/interiors.js', 'js/shops.js', 'js/missions.js',
+    'js/audio.js', 'js/ui.js', 'js/main.js'
+  ];
+  var msg = document.getElementById('loadmsg');
+  var bar = document.getElementById('loadbar');
+  var err = document.getElementById('loaderror');
+
+  function fatal(text) {
+    err.classList.remove('hidden');
+    err.innerHTML = text;
+  }
+  function load(src, ok, fail) {
+    var s = document.createElement('script');
+    s.src = src;
+    s.onload = ok;
+    s.onerror = function () { s.remove(); fail(); };
+    document.head.appendChild(s);
+  }
+  function loadThree(i) {
+    if (i >= THREE_SOURCES.length) {
+      fatal('Could not load <b>Three.js</b>.<br>Download <code>three.min.js</code> (release r128) and place it at ' +
+            '<code>lib/three.min.js</code>, then reload this page.<br>See README.md for the link.');
+      return;
+    }
+    msg.textContent = 'Loading Three.js (' + (i + 1) + '/' + THREE_SOURCES.length + ')…';
+    load(THREE_SOURCES[i], loadGame.bind(null, 0), function () { loadThree(i + 1); });
+  }
+  function loadGame(n) {
+    if (n >= GAME_FILES.length) { return; }  // main.js boots itself
+    msg.textContent = 'Loading game code…';
+    bar.style.width = Math.round(100 * n / GAME_FILES.length) + '%';
+    load(GAME_FILES[n], loadGame.bind(null, n + 1), function () {
+      fatal('Failed to load <code>' + GAME_FILES[n] + '</code>. Make sure all files of the game folder are present.');
+    });
+  }
+  window.addEventListener('error', function (e) {
+    if (document.getElementById('mainmenu').classList.contains('hidden')) {
+      fatal('Script error: ' + (e.message || e.error) + ' (' + (e.filename || '').split('/').pop() + ':' + e.lineno + ')');
+    }
+  });
+  loadThree(0);
+})();
+</script>
+</body>
+</html>
